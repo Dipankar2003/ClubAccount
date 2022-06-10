@@ -8,11 +8,24 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 
 import com.github.dhaval2404.imagepicker.ImagePicker;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+
+import java.util.HashMap;
 
 
 public class MainBoardAddPage extends AppCompatActivity
@@ -24,6 +37,10 @@ public class MainBoardAddPage extends AppCompatActivity
     public EditText ed_new_member_post;
     int check;
 
+    private FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+    private DatabaseReference dbRef;
+    private FirebaseStorage storage;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -33,6 +50,9 @@ public class MainBoardAddPage extends AppCompatActivity
         btn_save = findViewById(R.id.btn_save);
         ed_new_member_name = findViewById(R.id.ed_new_member_name);
         ed_new_member_post = findViewById(R.id.ed_new_member_psot);
+
+        dbRef = FirebaseDatabase.getInstance().getReference();
+        storage = FirebaseStorage.getInstance();
 
         Intent intent = getIntent();
         check = intent.getIntExtra("CALLED_FROM",0);
@@ -53,19 +73,49 @@ public class MainBoardAddPage extends AppCompatActivity
             public void onClick(View view) {
                 //firebase code to add member details to database
                 Toast.makeText(getApplicationContext(),"Clicked",Toast.LENGTH_SHORT).show();
+                String name = ed_new_member_name.getText().toString();
+                String post = ed_new_member_post.getText().toString();
+
+                //String clubName = currentUser.getDisplayName();
+                String clubName = "WSM";
+
+                HashMap<String,Object> hashMap = new HashMap<>();
+                hashMap.put("Name", name);
+                hashMap.put("Position", post);
+
                 switch (check)
                 {
                     case 1 :
                         Toast.makeText(getApplicationContext(),"save data to firebase for mentor board",Toast.LENGTH_SHORT).show();
                         //save data to firebase for mentor board
+
+                        dbRef.child("Club").child(clubName).child("Board").child("Mentor").child(post).updateChildren(hashMap).addOnCompleteListener(new OnCompleteListener<Void>() {
+                            @Override
+                            public void onComplete(@NonNull Task<Void> task) {
+                                Toast.makeText(MainBoardAddPage.this, "Member Added", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+
                         break;
                     case 2 :
                         Toast.makeText(getApplicationContext(),"data img to firebase for main board",Toast.LENGTH_SHORT).show();
                         //save data to firebase for main board
+                        dbRef.child("Club").child(clubName).child("Board").child("Main").child(post).updateChildren(hashMap).addOnCompleteListener(new OnCompleteListener<Void>() {
+                            @Override
+                            public void onComplete(@NonNull Task<Void> task) {
+                                Toast.makeText(MainBoardAddPage.this, "Member Added", Toast.LENGTH_SHORT).show();
+                            }
+                        });
                         break;
                     case 3 :
                         Toast.makeText(getApplicationContext(),"data img to firebase for Assistant board",Toast.LENGTH_SHORT).show();
                         //save data to firebase for Assistant board
+                        dbRef.child("Club").child(clubName).child("Board").child("Assistant").child(post).updateChildren(hashMap).addOnCompleteListener(new OnCompleteListener<Void>() {
+                            @Override
+                            public void onComplete(@NonNull Task<Void> task) {
+                                Toast.makeText(MainBoardAddPage.this, "Member Added", Toast.LENGTH_SHORT).show();
+                            }
+                        });
                         break;
                 }
             }
@@ -79,19 +129,58 @@ public class MainBoardAddPage extends AppCompatActivity
 
         Uri uri = data.getData();
         profile.setImageURI(uri);
+        String clubName = "WSM";
+        String post = ed_new_member_post.getText().toString();
+
         switch (check)
         {
             case 1 :
                 Toast.makeText(getApplicationContext(),"save img to firebase for mentor board",Toast.LENGTH_SHORT).show();
                 //save img to firebase for mentor board
+                StorageReference MBreference= storage.getReference().child(clubName+"/Mentor Board/"+post+".jpg");
+                MBreference.putFile(uri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        MBreference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                            @Override
+                            public void onSuccess(Uri uri) {
+                                dbRef.child("Club").child(clubName).child("Board").child("Mentor").child(post).child("Photo").setValue(uri.toString());
+                            }
+                        });
+                    }
+                });
                 break;
             case 2 :
                 Toast.makeText(getApplicationContext(),"save img to firebase for main board",Toast.LENGTH_SHORT).show();
                 //save img to firebase for main board
+                StorageReference Mreference= storage.getReference().child(clubName+"/Main Board/"+post+".jpg");
+                Mreference.putFile(uri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        Mreference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                            @Override
+                            public void onSuccess(Uri uri) {
+                                dbRef.child("Club").child(clubName).child("Board").child("Main").child(post).child("Photo").setValue(uri.toString());
+                            }
+                        });
+                    }
+                });
                 break;
             case 3 :
                 Toast.makeText(getApplicationContext(),"save img to firebase for Assistant board",Toast.LENGTH_SHORT).show();
                 //save img to firebase for Assistant board
+                StorageReference Areference= storage.getReference().child(clubName+"/Assitant Board/"+post+".jpg");
+                Areference.putFile(uri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        Areference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                            @Override
+                            public void onSuccess(Uri uri) {
+                                dbRef.child("Club").child(clubName).child("Board").child("Assistant").child(post).child("Photo").setValue(uri.toString());
+                            }
+                        });
+                    }
+                });
                 break;
         }
     }

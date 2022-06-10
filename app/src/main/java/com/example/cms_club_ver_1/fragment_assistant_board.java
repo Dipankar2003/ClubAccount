@@ -10,19 +10,31 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 
 public class fragment_assistant_board extends Fragment {
     public EditText ed_search;
     public RecyclerView recyclerView;
-    public ArrayList<MainBoardPOJO> arrayList;
-    public MainBoardAdapter adapter;
+    //public ArrayList<MainBoardPOJO> arrayList;
+    public ArrayList<main> arrayList;
+    //public MainBoardAdapter adapter;
+    public mainAdapter adapter;
+    public DatabaseReference database;
     public AppCompatButton btn_add_assistant_board;
+    private String currentUser ="WSM";  //user.getCurrentuser();
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -35,17 +47,19 @@ public class fragment_assistant_board extends Fragment {
         btn_add_assistant_board = view.findViewById(R.id.btn_assistant_add);
         arrayList = new ArrayList<>();
 
-        arrayList.add(new MainBoardPOJO(R.drawable.ic_launcher_background,"Swapnil Kulkarni","Web Developer"));
-        arrayList.add(new MainBoardPOJO(R.drawable.ic_launcher_background,"Harshal Gawande","Treasurer"));
-        arrayList.add(new MainBoardPOJO(R.drawable.ic_launcher_background,"Swapnil Kulkarni","Web Developer"));
-        arrayList.add(new MainBoardPOJO(R.drawable.ic_launcher_background,"Swapnil Kulkarni","Web Developer"));
-        arrayList.add(new MainBoardPOJO(R.drawable.ic_launcher_background,"Swapnil Kulkarni","Web Developer"));
-        arrayList.add(new MainBoardPOJO(R.drawable.ic_launcher_background,"Swapnil Kulkarni","Web Developer"));
-        arrayList.add(new MainBoardPOJO(R.drawable.ic_launcher_background,"Swapnil Kulkarni","Web Developer"));
+//        arrayList.add(new MainBoardPOJO(R.drawable.ic_launcher_background,"Swapnil Kulkarni","Web Developer"));
+//        arrayList.add(new MainBoardPOJO(R.drawable.ic_launcher_background,"Harshal Gawande","Treasurer"));
+//        arrayList.add(new MainBoardPOJO(R.drawable.ic_launcher_background,"Swapnil Kulkarni","Web Developer"));
+//        arrayList.add(new MainBoardPOJO(R.drawable.ic_launcher_background,"Swapnil Kulkarni","Web Developer"));
+//        arrayList.add(new MainBoardPOJO(R.drawable.ic_launcher_background,"Swapnil Kulkarni","Web Developer"));
+//        arrayList.add(new MainBoardPOJO(R.drawable.ic_launcher_background,"Swapnil Kulkarni","Web Developer"));
+//        arrayList.add(new MainBoardPOJO(R.drawable.ic_launcher_background,"Swapnil Kulkarni","Web Developer"));
 
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        database= FirebaseDatabase.getInstance().getReference();
+        
 
-        adapter = new MainBoardAdapter(arrayList, new OnMainBoardRowClickListener() {
+        adapter = new mainAdapter(arrayList, new OnMainBoardRowClickListener() {
             @Override
             public void onItemClick(MainBoardPOJO mainBoardPOJO) {
                 Toast.makeText(getContext(),mainBoardPOJO.getName(),Toast.LENGTH_SHORT).show();
@@ -55,6 +69,28 @@ public class fragment_assistant_board extends Fragment {
                 startActivity(intent);
             }
         });
+
+
+        //
+        database.child("Club").child(currentUser).child("Board").child("Assistant").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+
+                for(DataSnapshot dataSnapshot:snapshot.getChildren())
+                {
+                    main main1=dataSnapshot.getValue(main.class);
+                    arrayList.add(main1);
+                }
+                adapter.notifyDataSetChanged();
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+        //
         recyclerView.setAdapter(adapter);
 
         ed_search.addTextChangedListener(new TextWatcher() {
@@ -90,8 +126,8 @@ public class fragment_assistant_board extends Fragment {
 
 
     private void filter(String text) {
-        ArrayList<MainBoardPOJO> filteredlist = new ArrayList<>();
-        for (MainBoardPOJO item : arrayList) {
+        ArrayList<main> filteredlist = new ArrayList<>();
+        for (main item : arrayList) {
             if (item.getName().toLowerCase().contains(text.toLowerCase())) {
                 filteredlist.add(item);
             }
